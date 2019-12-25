@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+  auth:
+    image: registry.gitlab.com/pardacho/secure-portal/auth
+    networks:
+      - public
+      - private
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.frontend.rule=Host:auth.sample.com"
+        - "traefik.port=80"
+        - "traefik.docker.network=public"
+
+networks:
+  public:
+    external: true
+  private:

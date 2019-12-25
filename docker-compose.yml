@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  server:
+    image: jerson/go:1.13
+    ports:
+      - 8000:80
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app
+    entrypoint: sh

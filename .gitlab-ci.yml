@@ -1,0 +1,21 @@
+image: docker:latest
+
+stages:
+  - build
+
+services:
+  - docker:dind
+
+variables:
+  APP_VERSION: $CI_COMMIT_REF_NAME
+  REGISTRY: $CI_REGISTRY_IMAGE
+
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+
+cron:
+  stage: build
+  script:
+    - docker build --pull -f docker/auth/Dockerfile -t $REGISTRY/auth:$APP_VERSION -t $REGISTRY/auth .
+    - docker push $REGISTRY/auth:$APP_VERSION
+    - docker push $REGISTRY/auth

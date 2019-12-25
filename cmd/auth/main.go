@@ -53,7 +53,6 @@ func main() {
 					defaultPath = defaultCookie.Value
 				}
 
-
 				resetDefaultCookie := &http.Cookie{
 					Name:    "Default",
 					Value:   "",
