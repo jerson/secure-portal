@@ -30,15 +30,15 @@ func main() {
 				w.Write([]byte("401 Unauthorized\n"))
 				return
 			}
-			isValidCredentilas := user == "admin" && pass == "admin"
-			if !isValidCredentilas {
+			isValidCredentials := user == "admin" && pass == "admin"
+			if !isValidCredentials {
 				// retry
 				w.Header().Set("WWW-Authenticate", `Basic realm="MY REALM"`)
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("401 Unauthorized\n"))
 				return
 			}
-			if isValidCredentilas {
+			if isValidCredentials {
 
 				cookie := &http.Cookie{
 					Name:  "Auth-Portal",

@@ -1,6 +1,6 @@
 FROM jerson/go:1.13 AS builder
 
-ENV WORKDIR ${GOPATH}/app
+ENV WORKDIR /app
 WORKDIR ${WORKDIR}
 
 COPY go.mod Makefile ./
