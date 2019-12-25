@@ -13,7 +13,7 @@ variables:
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
 
-cron:
+auth:
   stage: build
   script:
     - docker build --pull -f docker/auth/Dockerfile -t $REGISTRY/auth:$APP_VERSION -t $REGISTRY/auth .

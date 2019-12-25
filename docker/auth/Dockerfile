@@ -3,13 +3,13 @@ FROM jerson/go:1.13 AS builder
 ENV WORKDIR ${GOPATH}/app
 WORKDIR ${WORKDIR}
 
-COPY go.mod ./
+COPY go.mod Makefile ./
 RUN make deps
 
 USER root
 
-COPY ../../config.toml-dist config.toml
-COPY ../.. .
+COPY config.toml-dist config.toml
+COPY . .
 
 RUN make build-auth
 
