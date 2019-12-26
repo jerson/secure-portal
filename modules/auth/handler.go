@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
+	"secure-portal/modules/auth/providers"
 	"secure-portal/modules/config"
 	"secure-portal/modules/context"
 	"time"
@@ -16,14 +16,19 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 		log := ctx.GetLogger("logout")
 
 		log.Debugf("start: %s", config.Vars.Auth.Type)
+		var handled bool
 
 		switch config.Vars.Auth.Type {
 		case "basicauth":
-			basicAuthLogout(r, w)
+			provider := providers.NewBasicAuthProvider(ctx, r, w)
+			handled = provider.Logout()
+		}
+
+		if handled {
+			return true
 		}
 
 		resetDefaultPath(w)
-
 		http.Redirect(w, r, config.Vars.Auth.Path.LogoutRedirect, http.StatusTemporaryRedirect)
 		return true
 
@@ -38,7 +43,8 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 
 		switch config.Vars.Auth.Type {
 		case "basicauth":
-			isValid, handled = basicAuth(r, w)
+			provider := providers.NewBasicAuthProvider(ctx, r, w)
+			isValid, handled = provider.Login()
 		}
 
 		if handled {
@@ -59,45 +65,6 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
-func basicAuthLogout(r *http.Request, w http.ResponseWriter) {
-
-	r.SetBasicAuth("", "")
-	cookie := &http.Cookie{
-		Name:    config.Vars.Auth.Cookies.Auth,
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
-	}
-	http.SetCookie(w, cookie)
-
-}
-func basicAuth(r *http.Request, w http.ResponseWriter) (bool, bool) {
-
-	user, pass, ok := r.BasicAuth()
-	if !ok {
-		requireBasicAuth(w)
-		return false, true
-	}
-	isValid := user == config.Vars.Auth.BasicAuth.Username && pass == config.Vars.Auth.BasicAuth.Password
-	if !isValid {
-		// retry
-		requireBasicAuth(w)
-		return false, true
-	}
-
-	createAuthSession(w)
-	return isValid, false
-}
-
-func createAuthSession(w http.ResponseWriter) {
-	cookie := &http.Cookie{
-		Name:  config.Vars.Auth.Cookies.Auth,
-		Value: "admin",
-		Path:  "/",
-	}
-	http.SetCookie(w, cookie)
-}
-
 func resetDefaultPath(w http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:    config.Vars.Auth.Cookies.Redirect,
@@ -115,10 +82,4 @@ func defaultPath(r *http.Request) string {
 		defaultPath = defaultCookie.Value
 	}
 	return defaultPath
-}
-
-func requireBasicAuth(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, config.Vars.Auth.BasicAuth.Name))
-	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("401 Unauthorized\n"))
 }
