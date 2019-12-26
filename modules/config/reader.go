@@ -28,6 +28,7 @@ type Source struct {
 type Auth struct {
 	Port      int       `toml:"port" default:"80" required:"true"`
 	RPCPort   int       `toml:"rpcport" default:"50051"`
+	Type      string    `toml:"type" default:"basicauth"`
 	Source    Source    `toml:"source"`
 	Cookies   Cookies   `toml:"headers"`
 	BasicAuth BasicAuth `toml:"basicauth"`
