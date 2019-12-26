@@ -42,7 +42,7 @@ func main() {
 
 		log := ctx.GetLogger("handler")
 
-		log.Debug("auth.Handler")
+		log.Debugf("auth.Handler: %s", r.RequestURI)
 		handled := auth.Handler(ctx, w, r)
 		if handled {
 			log.Debug("handled")

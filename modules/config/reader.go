@@ -10,7 +10,9 @@ import (
 
 // BasicAuth ...
 type BasicAuth struct {
-	Name string `toml:"name" default:"Secure Portal" required:"true"`
+	Name     string `toml:"name" default:"Secure Portal" required:"true"`
+	Username string `toml:"username" default:"admin"`
+	Password string `toml:"password" default:"admin"`
 }
 
 // Cookies ...
@@ -19,19 +21,27 @@ type Cookies struct {
 	Auth     string `toml:"auth" default:"Auth-Portal" required:"true"`
 }
 
-// Source ...
-type Source struct {
+// AuthSource ...
+type AuthSource struct {
 	Host string `toml:"host" required:"true"`
+}
+
+// AuthPath ...
+type AuthPath struct {
+	Login          string `toml:"login" default:"/auth"  required:"true"`
+	Logout         string `toml:"logout" default:"/logout"  required:"true"`
+	LogoutRedirect string `toml:"logout" default:"/"  required:"true"`
 }
 
 // Auth ...
 type Auth struct {
-	Port      int       `toml:"port" default:"80" required:"true"`
-	RPCPort   int       `toml:"rpcport" default:"50051"`
-	Type      string    `toml:"type" default:"basicauth"`
-	Source    Source    `toml:"source"`
-	Cookies   Cookies   `toml:"headers"`
-	BasicAuth BasicAuth `toml:"basicauth"`
+	Port      int        `toml:"port" default:"80" required:"true"`
+	RPCPort   int        `toml:"rpcport" default:"50051"`
+	Type      string     `toml:"type" default:"basicauth"`
+	Source    AuthSource `toml:"source"`
+	Path      AuthPath   `toml:"path"`
+	Cookies   Cookies    `toml:"headers"`
+	BasicAuth BasicAuth  `toml:"basicauth"`
 }
 
 // Database ...

@@ -11,10 +11,25 @@ import (
 // Handler ...
 func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 
-	if r.RequestURI == "/auth" {
-		log := ctx.GetLogger("auth")
+	if r.RequestURI == config.Vars.Auth.Path.Logout {
+		log := ctx.GetLogger("logout")
 
-		log.Debugf("start auth: %s", config.Vars.Auth.Type)
+		log.Debugf("start: %s", config.Vars.Auth.Type)
+
+		switch config.Vars.Auth.Type {
+		case "basicauth":
+			basicAuthLogout(r, w)
+		}
+
+		http.Redirect(w, r, config.Vars.Auth.Path.LogoutRedirect, http.StatusTemporaryRedirect)
+		return true
+
+	}
+
+	if r.RequestURI == config.Vars.Auth.Path.Login {
+		log := ctx.GetLogger("login")
+
+		log.Debugf("start: %s", config.Vars.Auth.Type)
 		var isValid bool
 		var handled bool
 
@@ -35,11 +50,24 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 			http.Redirect(w, r, defaultPath, http.StatusTemporaryRedirect)
 			return true
 		}
+
 	}
 
 	return false
 }
 
+func basicAuthLogout(r *http.Request, w http.ResponseWriter) {
+
+	r.SetBasicAuth("", "")
+	cookie := &http.Cookie{
+		Name:    config.Vars.Auth.Cookies.Auth,
+		Value:   "",
+		Path:    "/",
+		Expires: time.Unix(0, 0),
+	}
+	http.SetCookie(w, cookie)
+
+}
 func basicAuth(r *http.Request, w http.ResponseWriter) (bool, bool) {
 
 	user, pass, ok := r.BasicAuth()
@@ -47,7 +75,7 @@ func basicAuth(r *http.Request, w http.ResponseWriter) (bool, bool) {
 		requireBasicAuth(w)
 		return false, true
 	}
-	isValid := user == "admin" && pass == "admin"
+	isValid := user == config.Vars.Auth.BasicAuth.Username && pass == config.Vars.Auth.BasicAuth.Password
 	if !isValid {
 		// retry
 		requireBasicAuth(w)
@@ -68,13 +96,13 @@ func createAuthSession(w http.ResponseWriter) {
 }
 
 func resetDefaultPath(w http.ResponseWriter) {
-	resetDefaultCookie := &http.Cookie{
+	cookie := &http.Cookie{
 		Name:    config.Vars.Auth.Cookies.Redirect,
 		Value:   "",
 		Path:    "/",
 		Expires: time.Unix(0, 0),
 	}
-	http.SetCookie(w, resetDefaultCookie)
+	http.SetCookie(w, cookie)
 }
 
 func defaultPath(r *http.Request) string {
