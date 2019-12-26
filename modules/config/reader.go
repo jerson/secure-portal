@@ -10,13 +10,13 @@ import (
 
 // BasicAuth ...
 type BasicAuth struct {
-	Name string `toml:"name" default:"Secure Portal"`
+	Name string `toml:"name" default:"Secure Portal" required:"true"`
 }
 
 // Cookies ...
 type Cookies struct {
-	Redirect string `toml:"redirect" default:"Redirect"`
-	Auth     string `toml:"auth" default:"Auth-Portal"`
+	Redirect string `toml:"redirect" default:"Redirect" required:"true"`
+	Auth     string `toml:"auth" default:"Auth-Portal" required:"true"`
 }
 
 // Source ...
@@ -26,7 +26,7 @@ type Source struct {
 
 // Auth ...
 type Auth struct {
-	Port      int       `toml:"port" default:"80"`
+	Port      int       `toml:"port" default:"80" required:"true"`
 	RPCPort   int       `toml:"rpcport" default:"50051"`
 	Source    Source    `toml:"source"`
 	Cookies   Cookies   `toml:"headers"`
