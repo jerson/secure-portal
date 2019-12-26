@@ -9,9 +9,10 @@ import (
 )
 
 // Handler ...
-func Handler(context context.Context, w http.ResponseWriter, r *http.Request) {
+func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
+
 	if r.RequestURI == "/auth" {
-		log := context.GetLogger("auth")
+		log := ctx.GetLogger("auth")
 
 		log.Debug("start auth")
 		user, pass, ok := r.BasicAuth()
@@ -19,7 +20,7 @@ func Handler(context context.Context, w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, config.Vars.Auth.BasicAuth.Name))
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("401 Unauthorized\n"))
-			return
+			return true
 		}
 		isValidCredentials := user == "admin" && pass == "admin"
 		if !isValidCredentials {
@@ -27,7 +28,7 @@ func Handler(context context.Context, w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, config.Vars.Auth.BasicAuth.Name))
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("401 Unauthorized\n"))
-			return
+			return true
 		}
 		if isValidCredentials {
 
@@ -53,7 +54,9 @@ func Handler(context context.Context, w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, resetDefaultCookie)
 
 			http.Redirect(w, r, defaultPath, http.StatusTemporaryRedirect)
-			return
+			return true
 		}
 	}
+
+	return false
 }

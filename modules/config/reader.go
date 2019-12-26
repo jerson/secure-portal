@@ -15,7 +15,7 @@ type BasicAuth struct {
 
 // Cookies ...
 type Cookies struct {
-	Redirect string `toml:"redirect" default:""`
+	Redirect string `toml:"redirect" default:"Redirect"`
 	Auth     string `toml:"auth" default:"Auth-Portal"`
 }
 

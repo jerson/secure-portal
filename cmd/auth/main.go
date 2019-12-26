@@ -40,10 +40,19 @@ func main() {
 		ctx := context.NewContextSingle("request")
 		defer ctx.Close()
 
-		auth.Handler(ctx, w, r)
+		log := ctx.GetLogger("handler")
+
+		log.Info("auth.Handler")
+		handled := auth.Handler(ctx, w, r)
+		if handled {
+			log.Info("handled")
+			return
+		}
 
 		isFirstLoad := auth.IsFirstLoad(w, r)
 		isValid := auth.IsValid(r)
+		log.Info("isFirstLoad: ", isFirstLoad)
+		log.Info("isValid: ", isValid)
 
 		if !isValid {
 			if isFirstLoad {
