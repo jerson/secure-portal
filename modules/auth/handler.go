@@ -11,7 +11,8 @@ import (
 // Handler ...
 func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 
-	if r.RequestURI == config.Vars.Auth.Path.Logout {
+	isValidRequest := r.Method == http.MethodGet
+	if isValidRequest && r.RequestURI == config.Vars.Auth.Path.Logout {
 		log := ctx.GetLogger("logout")
 
 		log.Debugf("start: %s", config.Vars.Auth.Type)
@@ -21,12 +22,14 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 			basicAuthLogout(r, w)
 		}
 
+		resetDefaultPath(w)
+
 		http.Redirect(w, r, config.Vars.Auth.Path.LogoutRedirect, http.StatusTemporaryRedirect)
 		return true
 
 	}
 
-	if r.RequestURI == config.Vars.Auth.Path.Login {
+	if isValidRequest && r.RequestURI == config.Vars.Auth.Path.Login {
 		log := ctx.GetLogger("login")
 
 		log.Debugf("start: %s", config.Vars.Auth.Type)
