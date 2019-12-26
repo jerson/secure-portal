@@ -2,13 +2,15 @@ package auth
 
 import (
 	"net/http"
+	"secure-portal/modules/config"
 )
 
+// IsFirstLoad ...
 func IsFirstLoad(w http.ResponseWriter, r *http.Request) bool {
-	_, err := r.Cookie("Default")
+	_, err := r.Cookie(config.Vars.Cookies.Redirect)
 	if err != nil {
 		cookie := &http.Cookie{
-			Name:  "Default",
+			Name:  config.Vars.Cookies.Redirect,
 			Value: r.RequestURI,
 			Path:  "/",
 		}
@@ -19,8 +21,9 @@ func IsFirstLoad(w http.ResponseWriter, r *http.Request) bool {
 	return false
 }
 
+// IsValid ...
 func IsValid(r *http.Request) bool {
-	auth, err := r.Cookie("Auth-Portal")
+	auth, err := r.Cookie(config.Vars.Cookies.Auth)
 	if err != nil {
 		return false
 	}

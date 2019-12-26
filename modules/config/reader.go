@@ -13,6 +13,17 @@ type Server struct {
 	RPCPort int `toml:"rpc_port" default:"50051"`
 }
 
+// BasicAuth ...
+type BasicAuth struct {
+	Name string `toml:"name" default:"Secure Portal"`
+}
+
+// Cookies ...
+type Cookies struct {
+	Redirect string `toml:"redirect" default:""`
+	Auth     string `toml:"auth" default:"Auth-Portal"`
+}
+
 // Database ...
 type Database struct {
 	Name     string `toml:"name" default:"app"`
@@ -24,11 +35,13 @@ type Database struct {
 
 // Vars ...
 var Vars = struct {
-	Name     string   `toml:"name" default:"App"`
-	Debug    bool     `toml:"debug" default:"false"`
-	Version  string   `toml:"version" default:"latest"`
-	Server   Server   `toml:"server"`
-	Database Database `toml:"database"`
+	Name      string    `toml:"name" default:"App"`
+	Debug     bool      `toml:"debug" default:"false"`
+	Version   string    `toml:"version" default:"latest"`
+	Server    Server    `toml:"server"`
+	Cookies   Cookies   `toml:"headers"`
+	Database  Database  `toml:"database"`
+	BasicAuth BasicAuth `toml:"basic_auth"`
 }{}
 
 // ReadDefault ...
@@ -42,5 +55,5 @@ func ReadDefault() error {
 
 // Read ...
 func Read(file string) error {
-	return configor.New(&configor.Config{ENVPrefix: "APP", Debug: false, Verbose: false}).Load(&Vars, file)
+	return configor.New(&configor.Config{ENVPrefix: "SP", Debug: false, Verbose: false}).Load(&Vars, file)
 }
