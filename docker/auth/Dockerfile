@@ -3,7 +3,7 @@ FROM jerson/go:1.13 AS builder
 ENV WORKDIR /app
 WORKDIR ${WORKDIR}
 
-COPY go.mod Makefile ./
+COPY go.mod go.sum Makefile ./
 RUN make deps
 
 USER root

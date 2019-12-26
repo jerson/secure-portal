@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+
+service Services {
+    rpc Ping (PingRequest) returns (PingResponse) {
+    }
+
+}
+
+message PingRequest {
+}
+
+message PingResponse {
+    string name = 1;
+}
