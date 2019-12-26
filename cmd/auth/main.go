@@ -42,17 +42,17 @@ func main() {
 
 		log := ctx.GetLogger("handler")
 
-		log.Info("auth.Handler")
+		log.Debug("auth.Handler")
 		handled := auth.Handler(ctx, w, r)
 		if handled {
-			log.Info("handled")
+			log.Debug("handled")
 			return
 		}
 
 		isFirstLoad := auth.IsFirstLoad(w, r)
 		isValid := auth.IsValid(r)
-		log.Info("isFirstLoad: ", isFirstLoad)
-		log.Info("isValid: ", isValid)
+		log.Debug("isFirstLoad: ", isFirstLoad)
+		log.Debug("isValid: ", isValid)
 
 		if !isValid {
 			if isFirstLoad {
