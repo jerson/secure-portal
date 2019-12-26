@@ -10,40 +10,13 @@ import (
 
 // BasicAuthProvider ...
 type BasicAuthProvider struct {
-	AuthProvider
-	Context context.Context
-	session session.Session
-	Data    map[string]interface{}
-
-	request *http.Request
-	writer  http.ResponseWriter
+	template
+	writer http.ResponseWriter
 }
 
 // NewBasicAuthProvider ...
 func NewBasicAuthProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *BasicAuthProvider {
-	ctx := &BasicAuthProvider{Context: context, session: s, request: r, writer: w}
-	ctx.init()
-	return ctx
-}
-
-// init ...
-func (p *BasicAuthProvider) init() {
-	p.Data = map[string]interface{}{}
-}
-
-// Session ...
-func (p *BasicAuthProvider) Session() session.Session {
-	return p.session
-}
-
-// IsFirstTime ...
-func (p *BasicAuthProvider) IsFirstTime() bool {
-	path := p.session.RedirectPath()
-	if path == "" {
-		p.session.SetRedirectPath(p.request.RequestURI)
-		return true
-	}
-	return false
+	return &BasicAuthProvider{template: *newTemplate(context, s, r), writer: w}
 }
 
 // IsAuthenticated ...
@@ -54,11 +27,8 @@ func (p *BasicAuthProvider) IsAuthenticated() bool {
 
 // Logout ...
 func (p *BasicAuthProvider) Logout() (handled bool) {
-
 	p.request.SetBasicAuth("", "")
-	p.session.Reset()
-
-	return false
+	return p.template.Logout()
 }
 
 // Login ...

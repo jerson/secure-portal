@@ -9,16 +9,15 @@ import (
 
 // CookiesSession ...
 type CookiesSession struct {
-	Session
-	Context context.Context
+	Ctx context.Context
 
 	request *http.Request
 	writer  http.ResponseWriter
 }
 
 // NewCookiesSession ...
-func NewCookiesSession(context context.Context, r *http.Request, w http.ResponseWriter) *CookiesSession {
-	return &CookiesSession{Context: context, request: r, writer: w}
+func NewCookiesSession(ctx context.Context, r *http.Request, w http.ResponseWriter) *CookiesSession {
+	return &CookiesSession{Ctx: ctx, request: r, writer: w}
 }
 
 // RedirectPath ...

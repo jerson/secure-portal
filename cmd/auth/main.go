@@ -46,8 +46,7 @@ func main() {
 		defer ctx.Close()
 
 		log := ctx.GetLogger("handler")
-		s := session.NewCookiesSession(ctx, r, w)
-		provider := Provider(ctx, s, r, w)
+		provider := Provider(ctx, session.NewCookiesSession(ctx, r, w), r, w)
 
 		log.Debugf("auth.Handler: %s", r.RequestURI)
 		handled := auth.Handler(provider, w, r)
