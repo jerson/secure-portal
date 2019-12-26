@@ -7,10 +7,10 @@ import (
 
 // IsFirstLoad ...
 func IsFirstLoad(w http.ResponseWriter, r *http.Request) bool {
-	_, err := r.Cookie(config.Vars.Cookies.Redirect)
+	_, err := r.Cookie(config.Vars.Auth.Cookies.Redirect)
 	if err != nil {
 		cookie := &http.Cookie{
-			Name:  config.Vars.Cookies.Redirect,
+			Name:  config.Vars.Auth.Cookies.Redirect,
 			Value: r.RequestURI,
 			Path:  "/",
 		}
@@ -23,7 +23,7 @@ func IsFirstLoad(w http.ResponseWriter, r *http.Request) bool {
 
 // IsValid ...
 func IsValid(r *http.Request) bool {
-	auth, err := r.Cookie(config.Vars.Cookies.Auth)
+	auth, err := r.Cookie(config.Vars.Auth.Cookies.Auth)
 	if err != nil {
 		return false
 	}

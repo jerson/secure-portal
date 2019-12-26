@@ -2,16 +2,11 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/jinzhu/configor"
 )
-
-// Server ...
-type Server struct {
-	Port    int `toml:"port" default:"8000"`
-	RPCPort int `toml:"rpc_port" default:"50051"`
-}
 
 // BasicAuth ...
 type BasicAuth struct {
@@ -22,6 +17,20 @@ type BasicAuth struct {
 type Cookies struct {
 	Redirect string `toml:"redirect" default:""`
 	Auth     string `toml:"auth" default:"Auth-Portal"`
+}
+
+// Source ...
+type Source struct {
+	Host string `toml:"host" required:"true"`
+}
+
+// Auth ...
+type Auth struct {
+	Port      int       `toml:"port" default:"80"`
+	RPCPort   int       `toml:"rpcport" default:"50051"`
+	Source    Source    `toml:"source"`
+	Cookies   Cookies   `toml:"headers"`
+	BasicAuth BasicAuth `toml:"basicauth"`
 }
 
 // Database ...
@@ -35,13 +44,9 @@ type Database struct {
 
 // Vars ...
 var Vars = struct {
-	Name      string    `toml:"name" default:"App"`
-	Debug     bool      `toml:"debug" default:"false"`
-	Version   string    `toml:"version" default:"latest"`
-	Server    Server    `toml:"server"`
-	Cookies   Cookies   `toml:"headers"`
-	Database  Database  `toml:"database"`
-	BasicAuth BasicAuth `toml:"basic_auth"`
+	Debug    bool     `toml:"debug" default:"false"`
+	Auth     Auth     `toml:"auth"`
+	Database Database `toml:"database"`
 }{}
 
 // ReadDefault ...
@@ -53,7 +58,17 @@ func ReadDefault() error {
 	return Read(file)
 }
 
+// IsDebug ...
+func IsDebug() bool {
+	return os.Getenv("DEBUG") == "1" || os.Getenv("DEBUG") == "true"
+}
+
+// IsVerbose ...
+func IsVerbose() bool {
+	return os.Getenv("VERBOSE") == "1" || os.Getenv("VERBOSE") == "true"
+}
+
 // Read ...
 func Read(file string) error {
-	return configor.New(&configor.Config{ENVPrefix: "SP", Debug: false, Verbose: false}).Load(&Vars, file)
+	return configor.New(&configor.Config{ENVPrefix: "SP", Debug: IsDebug(), Verbose: IsVerbose()}).Load(&Vars, file)
 }

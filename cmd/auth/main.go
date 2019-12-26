@@ -1,15 +1,30 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"secure-portal/modules/auth"
+	"secure-portal/modules/config"
+	"secure-portal/modules/context"
 )
 
+func init() {
+	err := config.ReadDefault()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
-	origin, _ := url.Parse("http://127.0.0.1:5800/")
+
+	ctx := context.NewContextSingle("main")
+	defer ctx.Close()
+
+	log := ctx.GetLogger("main")
+
+	origin, _ := url.Parse(config.Vars.Auth.Source.Host)
 
 	director := func(req *http.Request) {
 		req.Header.Add("X-Forwarded-Host", req.Host)
@@ -22,7 +37,10 @@ func main() {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		auth.Handler(w, r)
+		ctx := context.NewContextSingle("request")
+		defer ctx.Close()
+
+		auth.Handler(ctx, w, r)
 
 		isFirstLoad := auth.IsFirstLoad(w, r)
 		isValid := auth.IsValid(r)
@@ -39,7 +57,10 @@ func main() {
 		proxy.ServeHTTP(w, r)
 	})
 
-	log.Fatal(http.ListenAndServe(":9001", handler))
+	port := fmt.Sprintf(":%d", config.Vars.Auth.Port)
+	log.Infof("running: %s", port)
+
+	log.Fatal(http.ListenAndServe(port, handler))
 
 }
 

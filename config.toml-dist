@@ -1,2 +1,2 @@
-[auth]
-port=80
+[auth.source]
+host="http://127.0.0.1:3000"

@@ -36,10 +36,10 @@ func main() {
 
 	migrate(ctx)
 
-	port := fmt.Sprintf(":%d", config.Vars.Server.Port)
+	port := fmt.Sprintf(":%d", config.Vars.Auth.Port)
 	fmt.Println("running: ", port)
 
-	rpcPort := fmt.Sprintf(":%d", config.Vars.Server.RPCPort)
+	rpcPort := fmt.Sprintf(":%d", config.Vars.Auth.RPCPort)
 	fmt.Println("running RPC: ", rpcPort)
 
 	listener, err := net.Listen("tcp", port)
