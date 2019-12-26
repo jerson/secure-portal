@@ -24,7 +24,10 @@ func main() {
 
 	log := ctx.GetLogger("main")
 
-	origin, _ := url.Parse(config.Vars.Auth.Source.Host)
+	origin, err := url.Parse(config.Vars.Auth.Source.Host)
+	if err != nil {
+		panic(err)
+	}
 
 	director := func(req *http.Request) {
 		req.Header.Add("X-Forwarded-Host", req.Host)

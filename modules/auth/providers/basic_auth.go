@@ -3,23 +3,25 @@ package providers
 import (
 	"fmt"
 	"net/http"
+	"secure-portal/modules/auth/credentials"
 	"secure-portal/modules/config"
 	"secure-portal/modules/context"
-	"time"
 )
 
 // BasicAuthProvider ...
 type BasicAuthProvider struct {
-	authProvider
-	Context context.Context
-	Data    map[string]interface{}
+	AuthProvider
+	Context     context.Context
+	Credentials credentials.Credentials
+	Data        map[string]interface{}
+
 	request *http.Request
 	writer  http.ResponseWriter
 }
 
 // NewBasicAuthProvider ...
-func NewBasicAuthProvider(context context.Context, r *http.Request, w http.ResponseWriter) *BasicAuthProvider {
-	ctx := &BasicAuthProvider{Context: context, request: r, writer: w}
+func NewBasicAuthProvider(context context.Context, credentials credentials.Credentials, r *http.Request, w http.ResponseWriter) *BasicAuthProvider {
+	ctx := &BasicAuthProvider{Context: context, Credentials: credentials, request: r, writer: w}
 	ctx.init()
 	return ctx
 }
@@ -33,7 +35,7 @@ func (b *BasicAuthProvider) init() {
 func (b *BasicAuthProvider) Logout() (handled bool) {
 
 	b.request.SetBasicAuth("", "")
-	b.resetAuth()
+	b.Credentials.Reset()
 
 	return false
 }
@@ -53,31 +55,12 @@ func (b *BasicAuthProvider) Login() (isAuth bool, handled bool) {
 		return false, true
 	}
 
-	b.createAuthSession()
+	b.Credentials.Save()
 	return isValid, false
-}
-
-func (b *BasicAuthProvider) resetAuth() {
-	cookie := &http.Cookie{
-		Name:    config.Vars.Auth.Cookies.Auth,
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
-	}
-	http.SetCookie(b.writer, cookie)
 }
 
 func (b *BasicAuthProvider) requireBasicAuth() {
 	b.writer.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, config.Vars.Auth.BasicAuth.Name))
 	b.writer.WriteHeader(http.StatusUnauthorized)
 	b.writer.Write([]byte("401 Unauthorized\n"))
-}
-
-func (b *BasicAuthProvider) createAuthSession() {
-	cookie := &http.Cookie{
-		Name:  config.Vars.Auth.Cookies.Auth,
-		Value: "admin",
-		Path:  "/",
-	}
-	http.SetCookie(b.writer, cookie)
 }

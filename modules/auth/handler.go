@@ -1,11 +1,12 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
+	"secure-portal/modules/auth/credentials"
 	"secure-portal/modules/auth/providers"
 	"secure-portal/modules/config"
 	"secure-portal/modules/context"
-	"time"
 )
 
 // Handler ...
@@ -16,19 +17,24 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 		log := ctx.GetLogger("logout")
 
 		log.Debugf("start: %s", config.Vars.Auth.Type)
-		var handled bool
+
+		var provider providers.AuthProvider
+		credential := credentials.NewCookiesCredentials(ctx, r, w)
 
 		switch config.Vars.Auth.Type {
 		case "basicauth":
-			provider := providers.NewBasicAuthProvider(ctx, r, w)
-			handled = provider.Logout()
+			provider = providers.NewBasicAuthProvider(ctx, credential, r, w)
+		default:
+			panic(fmt.Sprintf("type not handled: %s", config.Vars.Auth.Type))
 		}
 
+		handled := provider.Logout()
 		if handled {
 			return true
 		}
 
-		resetDefaultPath(w)
+		credential.ResetRedirectPath()
+
 		http.Redirect(w, r, config.Vars.Auth.Path.LogoutRedirect, http.StatusTemporaryRedirect)
 		return true
 
@@ -38,48 +44,31 @@ func Handler(ctx context.Context, w http.ResponseWriter, r *http.Request) bool {
 		log := ctx.GetLogger("login")
 
 		log.Debugf("start: %s", config.Vars.Auth.Type)
-		var isValid bool
-		var handled bool
+
+		var provider providers.AuthProvider
+		credential := credentials.NewCookiesCredentials(ctx, r, w)
 
 		switch config.Vars.Auth.Type {
 		case "basicauth":
-			provider := providers.NewBasicAuthProvider(ctx, r, w)
-			isValid, handled = provider.Login()
+			provider = providers.NewBasicAuthProvider(ctx, credential, r, w)
+		default:
+			panic(fmt.Sprintf("type not handled: %s", config.Vars.Auth.Type))
 		}
 
+		isValid, handled := provider.Login()
 		if handled {
 			return true
 		}
 
 		if isValid {
+			redirectPath := credential.RedirectPath()
+			credential.ResetRedirectPath()
 
-			defaultPath := defaultPath(r)
-			resetDefaultPath(w)
-
-			http.Redirect(w, r, defaultPath, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, redirectPath, http.StatusTemporaryRedirect)
 			return true
 		}
 
 	}
 
 	return false
-}
-
-func resetDefaultPath(w http.ResponseWriter) {
-	cookie := &http.Cookie{
-		Name:    config.Vars.Auth.Cookies.Redirect,
-		Value:   "",
-		Path:    "/",
-		Expires: time.Unix(0, 0),
-	}
-	http.SetCookie(w, cookie)
-}
-
-func defaultPath(r *http.Request) string {
-	defaultPath := "/"
-	defaultCookie, _ := r.Cookie(config.Vars.Auth.Cookies.Redirect)
-	if defaultCookie != nil {
-		defaultPath = defaultCookie.Value
-	}
-	return defaultPath
 }
