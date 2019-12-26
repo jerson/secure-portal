@@ -6,6 +6,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"secure-portal/modules/auth"
+	"secure-portal/modules/auth/providers"
+	"secure-portal/modules/auth/session"
 	"secure-portal/modules/config"
 	"secure-portal/modules/context"
 )
@@ -44,16 +46,19 @@ func main() {
 		defer ctx.Close()
 
 		log := ctx.GetLogger("handler")
+		s := session.NewCookiesSession(ctx, r, w)
+		provider := Provider(ctx, s, r, w)
 
 		log.Debugf("auth.Handler: %s", r.RequestURI)
-		handled := auth.Handler(ctx, w, r)
+		handled := auth.Handler(provider, w, r)
 		if handled {
 			log.Debug("handled")
 			return
 		}
 
-		isFirstLoad := auth.IsFirstLoad(w, r)
-		isValid := auth.IsValid(r)
+		isFirstLoad := provider.IsFirstTime()
+		isValid := provider.IsAuthenticated()
+
 		log.Debug("isFirstLoad: ", isFirstLoad)
 		log.Debug("isValid: ", isValid)
 
@@ -76,8 +81,24 @@ func main() {
 
 }
 
+// Provider ...
+func Provider(ctx context.Context, s session.Session, r *http.Request, w http.ResponseWriter) (provider providers.AuthProvider) {
+
+	log := ctx.GetLogger("provider")
+	log.Debugf("start: %s", config.Vars.Auth.Type)
+
+	switch config.Vars.Auth.Type {
+	case "basicauth":
+		provider = providers.NewBasicAuthProvider(ctx, s, r, w)
+	default:
+		panic(fmt.Sprintf("type not handled: %s", config.Vars.Auth.Type))
+	}
+
+	return provider
+}
+
 func redirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/auth", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, config.Vars.Auth.Path.Login, http.StatusTemporaryRedirect)
 }
 
 func notAllowed(w http.ResponseWriter) {
