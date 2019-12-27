@@ -28,20 +28,22 @@ type AuthSource struct {
 
 // AuthPath ...
 type AuthPath struct {
-	Login          string `toml:"login" default:"/auth"  required:"true"`
-	Logout         string `toml:"logout" default:"/logout"  required:"true"`
-	LogoutRedirect string `toml:"logout" default:"/"  required:"true"`
+	Login             string   `toml:"login" default:"/sp/login"  required:"true"`
+	Logout            string   `toml:"logout" default:"/sp/logout"  required:"true"`
+	Register          string   `toml:"register" default:"/sp/register"  required:"true"`
+	RegisterWhitelist []string `toml:"register_whitelist" default:"127.0.0.1"`
+	LogoutRedirect    string   `toml:"logout_redirect" default:"/"  required:"true"`
 }
 
 // Auth ...
 type Auth struct {
 	Port      int        `toml:"port" default:"80" required:"true"`
-	RPCPort   int        `toml:"rpcport" default:"50051"`
+	RPCPort   int        `toml:"rpc_port" default:"50051"`
 	Type      string     `toml:"type" default:"basicauth"`
 	Source    AuthSource `toml:"source"`
 	Path      AuthPath   `toml:"path"`
 	Cookies   Cookies    `toml:"headers"`
-	BasicAuth BasicAuth  `toml:"basicauth"`
+	BasicAuth BasicAuth  `toml:"basic_auth"`
 }
 
 // Database ...

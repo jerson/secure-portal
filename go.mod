@@ -16,7 +16,7 @@ require (
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/soheilhy/cmux v0.1.4
-	github.com/tstranex/u2f v1.0.0 // indirect
+	github.com/tstranex/u2f v1.0.0
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	google.golang.org/grpc v1.26.0
 )

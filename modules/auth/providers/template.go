@@ -47,3 +47,8 @@ func (p *template) Logout() (handled bool) {
 	p.session.Reset()
 	return false
 }
+
+// Register ...
+func (p *template) Register() (handled bool) {
+	return false
+}

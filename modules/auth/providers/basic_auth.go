@@ -52,6 +52,6 @@ func (p *BasicAuthProvider) Login() (isAuth bool, handled bool) {
 
 func (p *BasicAuthProvider) requireBasicAuth() {
 	p.writer.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s"`, config.Vars.Auth.BasicAuth.Name))
-	p.writer.WriteHeader(http.StatusUnauthorized)
-	p.writer.Write([]byte("401 Unauthorized\n"))
+	http.Error(p.writer, "unauthorized", http.StatusUnauthorized)
+
 }
