@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+    <!-- The original u2f-api.js code can be found here:
+    https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js -->
+    <script type="text/javascript" src="//cdn.jsdelivr.net/npm/u2f-api@latest/bundle.js"></script>
+</head>
+<body>
+<h1>FIDO</h1>
+
+<script>
+    function serverError(data) {
+        console.log(data);
+        alert('Server error code ' + data.status + ': ' + data.responseText);
+    }
+
+    function checkError(resp) {
+        if (!('errorCode' in resp)) {
+            return false;
+        }
+        if (resp.errorCode === u2f.ErrorCodes['OK']) {
+            return false;
+        }
+        var msg = 'U2F error code ' + resp.errorCode;
+        for (name in u2f.ErrorCodes) {
+            if (u2f.ErrorCodes[name] === resp.errorCode) {
+                msg += ' (' + name + ')';
+            }
+        }
+        if (resp.errorMessage) {
+            msg += ': ' + resp.errorMessage;
+        }
+        console.log(msg);
+        alert(msg);
+        return true;
+    }
+
+    function u2fRegistered(resp) {
+        console.log(resp);
+        if (checkError(resp)) {
+            return;
+        }
+        $.post('{{ .registerPath }}', JSON.stringify(resp)).success(function () {
+            alert('Success');
+        }).fail(serverError);
+    }
+
+    var request = JSON.parse('{{ .request }}');
+    console.log(request);
+
+    $(document).ready(function () {
+
+        // u2fApi.register(request.appId, request.registerRequests, request.registeredKeys, u2fRegistered, 30);
+        u2fApi.register(request.registerRequests).then(u2fRegistered);
+
+    })
+
+</script>
+</body>
+</html>

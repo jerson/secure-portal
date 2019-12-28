@@ -10,13 +10,13 @@ import (
 
 // BasicAuthProvider ...
 type BasicAuthProvider struct {
-	template
+	providerTemplate
 	writer http.ResponseWriter
 }
 
 // NewBasicAuthProvider ...
 func NewBasicAuthProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *BasicAuthProvider {
-	return &BasicAuthProvider{template: *newTemplate(context, s, r), writer: w}
+	return &BasicAuthProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
 }
 
 // IsAuthenticated ...
@@ -28,7 +28,7 @@ func (p *BasicAuthProvider) IsAuthenticated() bool {
 // Logout ...
 func (p *BasicAuthProvider) Logout() (handled bool) {
 	p.request.SetBasicAuth("", "")
-	return p.template.Logout()
+	return p.providerTemplate.Logout()
 }
 
 // Login ...

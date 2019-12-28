@@ -23,7 +23,14 @@ type Cookies struct {
 
 // AuthSource ...
 type AuthSource struct {
-	Host string `toml:"host" required:"true"`
+	Host   string `toml:"host" required:"true"`
+	Schema string `toml:"schema" default:"http" required:"true"`
+}
+
+// AuthTarget ...
+type AuthTarget struct {
+	Host   string `toml:"host"`
+	Schema string `toml:"schema" default:"https" required:"true"`
 }
 
 // AuthPath ...
@@ -31,7 +38,7 @@ type AuthPath struct {
 	Login             string   `toml:"login" default:"/sp/login"  required:"true"`
 	Logout            string   `toml:"logout" default:"/sp/logout"  required:"true"`
 	Register          string   `toml:"register" default:"/sp/register"  required:"true"`
-	RegisterWhitelist []string `toml:"register_whitelist" default:"127.0.0.1"`
+	RegisterWhitelist []string `toml:"register_whitelist" default:""`
 	LogoutRedirect    string   `toml:"logout_redirect" default:"/"  required:"true"`
 }
 
@@ -41,6 +48,7 @@ type Auth struct {
 	RPCPort   int        `toml:"rpc_port" default:"50051"`
 	Type      string     `toml:"type" default:"basicauth"`
 	Source    AuthSource `toml:"source"`
+	Target    AuthTarget `toml:"target"`
 	Path      AuthPath   `toml:"path"`
 	Cookies   Cookies    `toml:"headers"`
 	BasicAuth BasicAuth  `toml:"basic_auth"`

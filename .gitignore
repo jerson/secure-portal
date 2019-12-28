@@ -12,3 +12,4 @@ config.toml
 *.aar
 *.jar
 *.framework
+pkged.go

@@ -26,14 +26,15 @@ func main() {
 
 	log := ctx.GetLogger("main")
 
-	origin, err := url.Parse(config.Vars.Auth.Source.Host)
+	endpoint := fmt.Sprintf("%s://%s", config.Vars.Auth.Source.Schema, config.Vars.Auth.Source.Host)
+	origin, err := url.Parse(endpoint)
 	if err != nil {
 		panic(err)
 	}
 
 	director := func(req *http.Request) {
-		req.Header.Add("X-Forwarded-Host", req.Host)
-		req.Header.Add("X-Origin-Host", origin.Host)
+		req.Header.Add("X-Forwarded-Endpoint", req.Host)
+		req.Header.Add("X-Origin-Endpoint", origin.Host)
 		req.URL.Scheme = "http"
 		req.URL.Host = origin.Host
 	}
@@ -89,6 +90,8 @@ func Provider(ctx context.Context, s session.Session, r *http.Request, w http.Re
 	switch config.Vars.Auth.Type {
 	case "basicauth":
 		provider = providers.NewBasicAuthProvider(ctx, s, r, w)
+	case "fido":
+		provider = providers.NewFIDOProvider(ctx, s, r, w)
 	default:
 		panic(fmt.Sprintf("type not handled: %s", config.Vars.Auth.Type))
 	}

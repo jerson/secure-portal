@@ -4,14 +4,35 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tstranex/u2f"
+	"html/template"
 	"net/http"
 	"secure-portal/modules/auth/session"
+	"secure-portal/modules/config"
 	"secure-portal/modules/context"
+	"secure-portal/modules/util"
 )
+
+var templateLogin *template.Template
+var templateRegister *template.Template
+
+func init() {
+
+	var err error
+	dir := "/templates/auth/fido"
+
+	templateLogin, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "login.html"))
+	if err != nil {
+		panic(err)
+	}
+	templateRegister, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "register.html"))
+	if err != nil {
+		panic(err)
+	}
+}
 
 // FIDOProvider ...
 type FIDOProvider struct {
-	template
+	providerTemplate
 	counter       uint32
 	writer        http.ResponseWriter
 	challenge     *u2f.Challenge
@@ -20,7 +41,7 @@ type FIDOProvider struct {
 
 // NewFIDOProvider ...
 func NewFIDOProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *FIDOProvider {
-	return &FIDOProvider{template: *newTemplate(context, s, r), writer: w}
+	return &FIDOProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
 }
 
 // IsAuthenticated ...
@@ -32,12 +53,16 @@ func (p *FIDOProvider) IsAuthenticated() bool {
 // Logout ...
 func (p *FIDOProvider) Logout() (handled bool) {
 	p.request.SetBasicAuth("", "")
-	return p.template.Logout()
+	return p.providerTemplate.Logout()
 }
 
 // appID ...
 func (p *FIDOProvider) appID() string {
-	return fmt.Sprintf("%s://%s", p.request.URL.Scheme, p.request.URL.Host)
+	host := config.Vars.Auth.Target.Host
+	if host == "" {
+		host = p.request.Host
+	}
+	return fmt.Sprintf("%s://%s", config.Vars.Auth.Target.Schema, host)
 }
 
 // trustedFacets ...
@@ -48,11 +73,11 @@ func (p *FIDOProvider) trustedFacets() []string {
 // Register ...
 func (p *FIDOProvider) Register() (handled bool) {
 
-	log := p.Ctx.GetLogger("Register")
-	if p.challenge != nil {
+	if p.request.Method == http.MethodPost {
 		return p.RegisterValidate()
 	}
 
+	log := p.Ctx.GetLogger("Register")
 	c, err := u2f.NewChallenge(p.appID(), p.trustedFacets())
 	if err != nil {
 		log.Warnf("challenge error: %s", err.Error())
@@ -65,15 +90,17 @@ func (p *FIDOProvider) Register() (handled bool) {
 
 	log.Infof("registerRequest %+v", req)
 
-	reqJSON, err := json.Marshal(req)
+	params := map[string]string{}
+
+	request, err := json.Marshal(req)
+	params["request"] = string(request)
+	params["registerPath"] = config.Vars.Auth.Path.Register
+
+	err = templateRegister.Execute(p.writer, params)
 	if err != nil {
-		log.Warnf("marshal error: %s", err.Error())
 		http.Error(p.writer, "internal error", http.StatusInternalServerError)
 		return true
 	}
-
-	p.writer.WriteHeader(http.StatusOK)
-	p.writer.Write(reqJSON)
 
 	return true
 }
@@ -82,10 +109,16 @@ func (p *FIDOProvider) Register() (handled bool) {
 func (p *FIDOProvider) RegisterValidate() (handled bool) {
 
 	log := p.Ctx.GetLogger("RegisterValidate")
+
 	var regResp u2f.RegisterResponse
 	if err := json.NewDecoder(p.request.Body).Decode(&regResp); err != nil {
 		http.Error(p.writer, "invalid response: "+err.Error(), http.StatusBadRequest)
-		return
+		return true
+	}
+
+	if p.challenge != nil {
+		http.Error(p.writer, "challenge missing", http.StatusBadRequest)
+		return true
 	}
 
 	config := &u2f.Config{
@@ -98,7 +131,7 @@ func (p *FIDOProvider) RegisterValidate() (handled bool) {
 	if err != nil {
 		log.Printf("u2f.Register error: %v", err)
 		http.Error(p.writer, "error verifying response", http.StatusInternalServerError)
-		return
+		return true
 	}
 
 	p.registrations = append(p.registrations, *reg)
@@ -112,49 +145,65 @@ func (p *FIDOProvider) RegisterValidate() (handled bool) {
 // Login ...
 func (p *FIDOProvider) Login() (isAuth bool, handled bool) {
 
+	if p.request.Method == http.MethodPost {
+		return p.LoginValidate()
+	}
+
 	log := p.Ctx.GetLogger("Login")
 
 	if p.challenge != nil {
-		return p.LoginValidate()
+		http.Error(p.writer, "challenge missing", http.StatusBadRequest)
+		return false, true
 	}
 
 	if p.registrations == nil {
 		http.Error(p.writer, "registration missing", http.StatusBadRequest)
-		return
+		return false, true
 	}
 
 	c, err := u2f.NewChallenge(p.appID(), p.trustedFacets())
 	if err != nil {
 		log.Warnf("challenge error: %s", err.Error())
 		http.Error(p.writer, "internal error", http.StatusInternalServerError)
-		return
+		return false, true
 	}
 	p.challenge = c
 
 	req := c.SignRequest(p.registrations)
 
 	log.Printf("Sign request: %+v", req)
-	json.NewEncoder(p.writer).Encode(req)
 
-	return false, false
+	params := map[string]string{}
+
+	request, err := json.Marshal(req)
+	params["request"] = string(request)
+	params["loginPath"] = config.Vars.Auth.Path.Login
+
+	err = templateLogin.Execute(p.writer, params)
+	if err != nil {
+		http.Error(p.writer, "internal error", http.StatusInternalServerError)
+		return false, true
+	}
+
+	return false, true
 }
 
 // LoginValidate ...
 func (p *FIDOProvider) LoginValidate() (isAuth bool, handled bool) {
 
-	log := p.Ctx.GetLogger("Login")
+	log := p.Ctx.GetLogger("LoginValidate")
 
 	var signResp u2f.SignResponse
 	if err := json.NewDecoder(p.request.Body).Decode(&signResp); err != nil {
 		http.Error(p.writer, "invalid response: "+err.Error(), http.StatusBadRequest)
-		return
+		return false, true
 	}
 
 	log.Printf("signResponse: %+v", signResp)
 
 	if p.registrations == nil {
 		http.Error(p.writer, "registration missing", http.StatusBadRequest)
-		return
+		return false, true
 	}
 
 	var err error
@@ -163,89 +212,12 @@ func (p *FIDOProvider) LoginValidate() (isAuth bool, handled bool) {
 		if authErr == nil {
 			log.Printf("newCounter: %d", newCounter)
 			p.counter = newCounter
-			p.writer.Write([]byte("success"))
-			return
+			return true, false
 		}
 	}
 
 	log.Printf("VerifySignResponse error: %v", err)
 	http.Error(p.writer, "error verifying response", http.StatusInternalServerError)
 
-	return false, false
+	return false, true
 }
-
-const indexHTML = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
-    <!-- The original u2f-api.js code can be found here:
-    https://github.com/google/u2f-ref-code/blob/master/u2f-gae-demo/war/js/u2f-api.js -->
-    <script type="text/javascript" src="https://demo.yubico.com/js/u2f-api.js"></script>
-  </head>
-  <body>
-    <h1>FIDO U2F Go Library Demo</h1>
-    <ul>
-      <li><a href="javascript:register();">Register token</a></li>
-      <li><a href="javascript:sign();">Authenticate</a></li>
-    </ul>
-    <p>Open Chrome Developer Tools to see debug console logs.</p>
-    <script>
-  function serverError(data) {
-    console.log(data);
-    alert('Server error code ' + data.status + ': ' + data.responseText);
-  }
-  function checkError(resp) {
-    if (!('errorCode' in resp)) {
-      return false;
-    }
-    if (resp.errorCode === u2f.ErrorCodes['OK']) {
-      return false;
-    }
-    var msg = 'U2F error code ' + resp.errorCode;
-    for (name in u2f.ErrorCodes) {
-      if (u2f.ErrorCodes[name] === resp.errorCode) {
-        msg += ' (' + name + ')';
-      }
-    }
-    if (resp.errorMessage) {
-      msg += ': ' + resp.errorMessage;
-    }
-    console.log(msg);
-    alert(msg);
-    return true;
-  }
-  function u2fRegistered(resp) {
-    console.log(resp);
-    if (checkError(resp)) {
-      return;
-    }
-    $.post('/registerResponse', JSON.stringify(resp)).success(function() {
-      alert('Success');
-    }).fail(serverError);
-  }
-  function register() {
-    $.getJSON('/registerRequest').success(function(req) {
-      console.log(req);
-      u2f.register(req.appId, req.registerRequests, req.registeredKeys, u2fRegistered, 30);
-    }).fail(serverError);
-  }
-  function u2fSigned(resp) {
-    console.log(resp);
-    if (checkError(resp)) {
-      return;
-    }
-    $.post('/signResponse', JSON.stringify(resp)).success(function() {
-      alert('Success');
-    }).fail(serverError);
-  }
-  function sign() {
-    $.getJSON('/signRequest').success(function(req) {
-      console.log(req);
-      u2f.sign(req.appId, req.challenge, req.registeredKeys, u2fSigned, 30);
-    }).fail(serverError);
-  }
-    </script>
-  </body>
-</html>
-`

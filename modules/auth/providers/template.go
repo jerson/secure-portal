@@ -6,8 +6,8 @@ import (
 	"secure-portal/modules/context"
 )
 
-// template ...
-type template struct {
+// providerTemplate ...
+type providerTemplate struct {
 	Ctx  context.Context
 	data map[string]interface{}
 
@@ -16,24 +16,24 @@ type template struct {
 }
 
 // newTemplate ...
-func newTemplate(ctx context.Context, s session.Session, r *http.Request) *template {
-	template := &template{Ctx: ctx, session: s, request: r}
+func newTemplate(ctx context.Context, s session.Session, r *http.Request) *providerTemplate {
+	template := &providerTemplate{Ctx: ctx, session: s, request: r}
 	template.init()
 	return template
 }
 
 // init ...
-func (p *template) init() {
+func (p *providerTemplate) init() {
 	p.data = map[string]interface{}{}
 }
 
 // Session ...
-func (p *template) Session() session.Session {
+func (p *providerTemplate) Session() session.Session {
 	return p.session
 }
 
 // IsFirstTime ...
-func (p *template) IsFirstTime() bool {
+func (p *providerTemplate) IsFirstTime() bool {
 	path := p.session.RedirectPath()
 	if path == "" {
 		p.session.SetRedirectPath(p.request.RequestURI)
@@ -43,12 +43,12 @@ func (p *template) IsFirstTime() bool {
 }
 
 // Logout ...
-func (p *template) Logout() (handled bool) {
+func (p *providerTemplate) Logout() (handled bool) {
 	p.session.Reset()
 	return false
 }
 
 // Register ...
-func (p *template) Register() (handled bool) {
+func (p *providerTemplate) Register() (handled bool) {
 	return false
 }
