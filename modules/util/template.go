@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 )
 
+// LoadTemplate ...
 func LoadTemplate(path string) (*template.Template, error) {
 
 	templateLayout, err := pkger.Open(path)

@@ -5,6 +5,8 @@ WORKDIR ${WORKDIR}
 
 COPY go.mod go.sum Makefile ./
 RUN make deps
+RUN go get github.com/markbates/pkger/cmd/pkger
+RUN pkger
 
 USER root
 
@@ -23,6 +25,7 @@ WORKDIR ${WORKDIR}
 
 COPY --from=builder ${BUILDER_PATH}/config.toml .
 COPY --from=builder ${BUILDER_PATH}/auth-server .
+COPY --from=builder ${BUILDER_PATH}/templates /templates
 
 EXPOSE 80
 
