@@ -12,24 +12,6 @@ import (
 	"secure-portal/modules/util"
 )
 
-var templateLogin *template.Template
-var templateRegister *template.Template
-
-func init() {
-
-	var err error
-	dir := "/templates/auth/fido"
-
-	templateLogin, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "login.html"))
-	if err != nil {
-		panic(err)
-	}
-	templateRegister, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "register.html"))
-	if err != nil {
-		panic(err)
-	}
-}
-
 // FIDOProvider ...
 type FIDOProvider struct {
 	providerTemplate
@@ -37,11 +19,42 @@ type FIDOProvider struct {
 	writer        http.ResponseWriter
 	challenge     *u2f.Challenge
 	registrations []u2f.Registration
+
+	templateLogin            *template.Template
+	templateRegister         *template.Template
+	templateLoginValidate    *template.Template
+	templateRegisterValidate *template.Template
 }
 
 // NewFIDOProvider ...
 func NewFIDOProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *FIDOProvider {
-	return &FIDOProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
+	provider := &FIDOProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
+	provider.init()
+	return provider
+}
+
+// IsAuthenticated ...
+func (p *FIDOProvider) init() {
+	var err error
+	dir := "/templates/auth/fido"
+
+	//TODO move this load template to another package
+	p.templateLogin, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "login.html"))
+	if err != nil {
+		panic(err)
+	}
+	p.templateLoginValidate, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "login_validate.html"))
+	if err != nil {
+		panic(err)
+	}
+	p.templateRegister, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "register.html"))
+	if err != nil {
+		panic(err)
+	}
+	p.templateRegisterValidate, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "register_validate.html"))
+	if err != nil {
+		panic(err)
+	}
 }
 
 // IsAuthenticated ...
@@ -96,7 +109,7 @@ func (p *FIDOProvider) Register() (handled bool) {
 	params["request"] = string(request)
 	params["registerPath"] = config.Vars.Auth.Path.Register
 
-	err = templateRegister.Execute(p.writer, params)
+	err = p.templateRegister.Execute(p.writer, params)
 	if err != nil {
 		http.Error(p.writer, "internal error", http.StatusInternalServerError)
 		return true
@@ -121,13 +134,13 @@ func (p *FIDOProvider) RegisterValidate() (handled bool) {
 		return true
 	}
 
-	config := &u2f.Config{
+	challengeConfig := &u2f.Config{
 		// Chrome 66+ doesn't return the device's attestation
 		// certificate by default.
 		SkipAttestationVerify: true,
 	}
 
-	reg, err := u2f.Register(regResp, *p.challenge, config)
+	reg, err := u2f.Register(regResp, *p.challenge, challengeConfig)
 	if err != nil {
 		log.Printf("u2f.Register error: %v", err)
 		http.Error(p.writer, "error verifying response", http.StatusInternalServerError)
@@ -179,7 +192,7 @@ func (p *FIDOProvider) Login() (isAuth bool, handled bool) {
 	params["request"] = string(request)
 	params["loginPath"] = config.Vars.Auth.Path.Login
 
-	err = templateLogin.Execute(p.writer, params)
+	err = p.templateLogin.Execute(p.writer, params)
 	if err != nil {
 		http.Error(p.writer, "internal error", http.StatusInternalServerError)
 		return false, true
