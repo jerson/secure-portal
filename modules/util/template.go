@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"github.com/markbates/pkger"
 	"html/template"
 	"io/ioutil"
@@ -9,7 +10,7 @@ import (
 // LoadTemplate ...
 func LoadTemplate(path string) (*template.Template, error) {
 
-	templateLayout, err := pkger.Open(path)
+	templateLayout, err := pkger.Open(fmt.Sprintf("/%s", path))
 	if err != nil {
 		return nil, err
 	}

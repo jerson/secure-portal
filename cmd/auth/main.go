@@ -88,10 +88,12 @@ func Provider(ctx context.Context, s session.Session, r *http.Request, w http.Re
 	log.Debugf("start: %s", config.Vars.Auth.Type)
 
 	switch config.Vars.Auth.Type {
-	case "basicauth":
+	case "basic-auth":
 		provider = providers.NewBasicAuthProvider(ctx, s, r, w)
 	case "fido":
 		provider = providers.NewFIDOProvider(ctx, s, r, w)
+	case "web-authn":
+		provider = providers.NewWebAuthnProvider(ctx, s, r, w)
 	default:
 		panic(fmt.Sprintf("type not handled: %s", config.Vars.Auth.Type))
 	}

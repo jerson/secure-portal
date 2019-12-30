@@ -46,7 +46,7 @@ type AuthPath struct {
 type Auth struct {
 	Port      int        `toml:"port" default:"80" required:"true"`
 	RPCPort   int        `toml:"rpc_port" default:"50051"`
-	Type      string     `toml:"type" default:"basicauth"`
+	Type      string     `toml:"type" default:"basic-auth"`
 	Source    AuthSource `toml:"source"`
 	Target    AuthTarget `toml:"target"`
 	Path      AuthPath   `toml:"path"`

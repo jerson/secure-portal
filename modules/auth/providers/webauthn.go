@@ -12,8 +12,8 @@ import (
 	"secure-portal/modules/util"
 )
 
-// FIDOProvider ...
-type FIDOProvider struct {
+// WebAuthnProvider ...
+type WebAuthnProvider struct {
 	providerTemplate
 	counter       uint32
 	writer        http.ResponseWriter
@@ -26,17 +26,17 @@ type FIDOProvider struct {
 	templateRegisterValidate *template.Template
 }
 
-// NewFIDOProvider ...
-func NewFIDOProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *FIDOProvider {
-	provider := &FIDOProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
+// NewWebAuthnProvider ...
+func NewWebAuthnProvider(context context.Context, s session.Session, r *http.Request, w http.ResponseWriter) *WebAuthnProvider {
+	provider := &WebAuthnProvider{providerTemplate: *newTemplate(context, s, r), writer: w}
 	provider.init()
 	return provider
 }
 
 // IsAuthenticated ...
-func (p *FIDOProvider) init() {
+func (p *WebAuthnProvider) init() {
 	var err error
-	dir := "templates/auth/fido"
+	dir := "templates/auth/web-authn"
 
 	//TODO move this load template to another package
 	p.templateLogin, err = util.LoadTemplate(fmt.Sprintf("%s/%s", dir, "login.html"))
@@ -58,19 +58,19 @@ func (p *FIDOProvider) init() {
 }
 
 // IsAuthenticated ...
-func (p *FIDOProvider) IsAuthenticated() bool {
+func (p *WebAuthnProvider) IsAuthenticated() bool {
 	value := p.session.GetToken()
 	return value == "admin"
 }
 
 // Logout ...
-func (p *FIDOProvider) Logout() (handled bool) {
+func (p *WebAuthnProvider) Logout() (handled bool) {
 	p.request.SetBasicAuth("", "")
 	return p.providerTemplate.Logout()
 }
 
 // appID ...
-func (p *FIDOProvider) appID() string {
+func (p *WebAuthnProvider) appID() string {
 	host := config.Vars.Auth.Target.Host
 	if host == "" {
 		host = p.request.Host
@@ -79,12 +79,12 @@ func (p *FIDOProvider) appID() string {
 }
 
 // trustedFacets ...
-func (p *FIDOProvider) trustedFacets() []string {
+func (p *WebAuthnProvider) trustedFacets() []string {
 	return []string{p.appID()}
 }
 
 // Register ...
-func (p *FIDOProvider) Register() (handled bool) {
+func (p *WebAuthnProvider) Register() (handled bool) {
 
 	if p.request.Method == http.MethodPost {
 		return p.RegisterValidate()
@@ -119,7 +119,7 @@ func (p *FIDOProvider) Register() (handled bool) {
 }
 
 // RegisterValidate ...
-func (p *FIDOProvider) RegisterValidate() (handled bool) {
+func (p *WebAuthnProvider) RegisterValidate() (handled bool) {
 
 	log := p.Ctx.GetLogger("RegisterValidate")
 
@@ -156,7 +156,7 @@ func (p *FIDOProvider) RegisterValidate() (handled bool) {
 }
 
 // Login ...
-func (p *FIDOProvider) Login() (isAuth bool, handled bool) {
+func (p *WebAuthnProvider) Login() (isAuth bool, handled bool) {
 
 	if p.request.Method == http.MethodPost {
 		return p.LoginValidate()
@@ -202,7 +202,7 @@ func (p *FIDOProvider) Login() (isAuth bool, handled bool) {
 }
 
 // LoginValidate ...
-func (p *FIDOProvider) LoginValidate() (isAuth bool, handled bool) {
+func (p *WebAuthnProvider) LoginValidate() (isAuth bool, handled bool) {
 
 	log := p.Ctx.GetLogger("LoginValidate")
 
